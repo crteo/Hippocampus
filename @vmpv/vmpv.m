@@ -14,7 +14,7 @@ function [obj, varargout] = vmpv(varargin)
 %dependencies: 
 
 Args = struct('RedoLevels',0, 'SaveLevels',1, 'Auto',0, 'ArgsOnly',0, ...
-				'ObjectLevel','Session','pix',1,'RequiredFile','binData.hdf', ...
+				'ObjectLevel','Session','pix',1,'RequiredFile','binData.csv', ...
 				'GridSteps',40, 'overallGridSize',25, ...
                 'MinObsPlace',5,'MinObsView',5,'MinDurPlace',0.05,'MinDurView',0.01);
             
@@ -72,13 +72,15 @@ if(~isempty(dir(requiredFile)))
 	uma = umaze('auto',varargin{:});
 	rp = rplparallel('auto',varargin{:});
     % % From hdf file
-   viewdata = h5read([num2str(Args.pix) 'binData.hdf'],'/data'); % Temporarily commented out 
+   % viewdata = h5read([num2str(Args.pix) 'binData.hdf'],'/data'); % Temporarily commented out 
     % because different people are working with different raycast cone sizes at the moment. -HM
      %5viewdata = h5read(Args.RequiredFile,'/data');
-     viewdata = viewdata';
+     
     % From   file
-    %viewdata = readtable('binData.csv');
-    %viewdata = table2array(viewdata);
+    viewdata = readtable('1binData.csv');
+    
+    viewdata = table2array(viewdata);
+    viewdata = viewdata;
     cd(ori);
 
     % major section 1 - getting combined sessiontime
