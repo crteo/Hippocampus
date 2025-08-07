@@ -14,7 +14,7 @@ function [obj, varargout] = vmpv(varargin)
 %dependencies: 
 
 Args = struct('RedoLevels',0, 'SaveLevels',1, 'Auto',0, 'ArgsOnly',0, ...
-				'ObjectLevel','Session','pix',1,'RequiredFile','binData.hdf', ...
+				'ObjectLevel','Session','pix',1,'RequiredFile','binData.csv', ...
 				'GridSteps',40, 'overallGridSize',25, ...
                 'MinObsPlace',5,'MinObsView',5,'MinDurPlace',0.05,'MinDurView',0.01);
             
@@ -64,20 +64,23 @@ dlist = nptDir;
 dnum = size(dlist,1);
 
 % check if the right conditions were met to create object
-if(~isempty(dir(Args.RequiredFile)))
+requiredFile = [num2str(Args.pix) Args.RequiredFile];
+if(~isempty(dir(requiredFile)))
 
     ori = pwd;
     data.origin = {pwd};
 	uma = umaze('auto',varargin{:});
 	rp = rplparallel('auto',varargin{:});
     % % From hdf file
-   viewdata = h5read([num2str(Args.pix) 'binData.hdf'],'/data'); % Temporarily commented out 
+   %viewdata = h5read([num2str(Args.pix) 'binData.hdf'],'/data'); % Temporarily commented out 
     % because different people are working with different raycast cone sizes at the moment. -HM
      %5viewdata = h5read(Args.RequiredFile,'/data');
-     viewdata = viewdata';
+     %viewdata = load("1binData.mat");
+     %viewdata = viewdata.viewdata(:,1:2);
+     %viewdata = viewdata';
     % From   file
-    %viewdata = readtable('binData.csv');
-    %viewdata = table2array(viewdata);
+    viewdata = readtable('1binData.csv');
+    viewdata = table2array(viewdata);
     cd(ori);
 
     % major section 1 - getting combined sessiontime
@@ -147,6 +150,123 @@ if(~isempty(dir(Args.RequiredFile)))
     cst(place_rows,:) = [];
     disp(['place pruning end, time elapsed: ' num2str(toc)]);
     
+% Debug script to find and analyze consecutive place rows
+% Add this code right after your place pruning step
+
+% Find all place rows
+place_rows = find(cst(:,5) == 1);
+
+% Check for consecutive place rows
+consecutive_indices = find(diff(place_rows) == 1);
+
+if ~isempty(consecutive_indices)
+    fprintf('=== CONSECUTIVE PLACE ROWS DETECTED ===\n');
+    fprintf('Found %d instances of consecutive place rows:\n\n', length(consecutive_indices));
+    
+    for i = 1:length(consecutive_indices)
+        idx = consecutive_indices(i);
+        row1 = place_rows(idx);
+        row2 = place_rows(idx + 1);
+        
+        fprintf('Instance %d: Consecutive place rows at positions %d and %d\n', i, row1, row2);
+        fprintf('  Row %d: time=%.6f, place=[%.3f, %.3f], hd=%.3f, type=%d\n', ...
+            row1, cst(row1,1), cst(row1,2), cst(row1,3), cst(row1,4), cst(row1,5));
+        fprintf('  Row %d: time=%.6f, place=[%.3f, %.3f], hd=%.3f, type=%d\n', ...
+            row2, cst(row2,1), cst(row2,2), cst(row2,3), cst(row2,4), cst(row2,5));
+        
+        % Check if times are identical
+        if abs(cst(row1,1) - cst(row2,1)) < 1e-10
+            fprintf('  → Same timestamp (%.10f vs %.10f)\n', cst(row1,1), cst(row2,1));
+        else
+            fprintf('  → Different timestamps (diff = %.10f)\n', cst(row2,1) - cst(row1,1));
+        end
+        
+        % Check if place values are identical
+        if abs(cst(row1,2) - cst(row2,2)) < 1e-10 && abs(cst(row1,3) - cst(row2,3)) < 1e-10
+            fprintf('  → Same place coordinates\n');
+        else
+            fprintf('  → Different place coordinates\n');
+        end
+        
+        % Show surrounding context (2 rows before and after)
+        fprintf('  Context:\n');
+        start_ctx = max(1, row1-2);
+        end_ctx = min(size(cst,1), row2+2);
+        for ctx_row = start_ctx:end_ctx
+            marker = '';
+            if ctx_row == row1 || ctx_row == row2
+                marker = ' <<<< CONSECUTIVE PLACE';
+            end
+            fprintf('    Row %d: time=%.6f, place=[%.3f, %.3f], hd=%.3f, type=%d%s\n', ...
+                ctx_row, cst(ctx_row,1), cst(ctx_row,2), cst(ctx_row,3), cst(ctx_row,4), cst(ctx_row,5), marker);
+        end
+        fprintf('\n');
+    end
+    
+    % Additional analysis
+    fprintf('=== ANALYSIS ===\n');
+    
+    % Check how many place rows would create zero-size chunks
+    reference_rows = place_rows - 1;
+    problematic_refs = [];
+    
+    for idx = 2:length(reference_rows)  % Start from 2 since first chunk starts at 1
+        chunk_start = reference_rows(idx-1) + 2;
+        chunk_end = reference_rows(idx);
+        
+        if chunk_start > chunk_end
+            problematic_refs = [problematic_refs, idx];
+            fprintf('Zero-size chunk would be created:\n');
+            fprintf('  reference_rows[%d] = %d, reference_rows[%d] = %d\n', ...
+                idx-1, reference_rows(idx-1), idx, reference_rows(idx));
+            fprintf('  Chunk range: %d:%d (size = %d)\n', ...
+                chunk_start, chunk_end, chunk_end - chunk_start + 1);
+        end
+    end
+    
+    if isempty(problematic_refs)
+        fprintf('No zero-size chunks would be created despite consecutive place rows.\n');
+    else
+        fprintf('Total zero-size chunks that would be created: %d\n', length(problematic_refs));
+    end
+    
+    % Summary statistics
+    fprintf('\n=== SUMMARY ===\n');
+    fprintf('Total place rows: %d\n', length(place_rows));
+    fprintf('Consecutive place row instances: %d\n', length(consecutive_indices));
+    fprintf('Percentage of place rows involved in consecutive pairs: %.2f%%\n', ...
+        (length(consecutive_indices) * 2) / length(place_rows) * 100);
+    
+else
+    fprintf('=== NO CONSECUTIVE PLACE ROWS FOUND ===\n');
+    fprintf('Algorithm assumption holds: no consecutive place rows detected.\n');
+    fprintf('Total place rows: %d\n', length(place_rows));
+end
+
+% Additional check: verify the pruning logic worked correctly
+fprintf('\n=== PRUNING VERIFICATION ===\n');
+place_rows = find(cst(:,5) == 1);
+redundant_places = 0;
+
+for i = 1:length(place_rows)
+    row = place_rows(i);
+    if row < size(cst,1)  % Not the last row
+        % Check if this place row has the same timestamp as the next row
+        if abs(cst(row,1) - cst(row+1,1)) < 1e-10
+            redundant_places = redundant_places + 1;
+            fprintf('Redundant place row found at position %d:\n', row);
+            fprintf('  Row %d: time=%.10f, type=%d\n', row, cst(row,1), cst(row,5));
+            fprintf('  Row %d: time=%.10f, type=%d\n', row+1, cst(row+1,1), cst(row+1,5));
+        end
+    end
+end
+
+if redundant_places == 0
+    fprintf('Pruning verification: No redundant place rows found.\n');
+else
+    fprintf('Pruning verification: %d redundant place rows still exist!\n', redundant_places);
+end
+
     % now we need to replace surviving place rows, with duplicates of
     % itself, corresponding to the number of views in the previous time
     % bin
@@ -188,9 +308,15 @@ if(~isempty(dir(Args.RequiredFile)))
             disp([num2str(idx) '/' num2str(length(reference_rows))]);
         end
         chunk_to_insert = cst(original_start:reference_rows(idx),:);
+        if reference_rows(idx) < original_start
+            fprintf("reference_rows(idx): %s", num2str(reference_rows(idx)));
+            fprintf("original_start: %s", original_start);
+        end
         cst_full(full_start:full_start-1+size(chunk_to_insert,1),:) = chunk_to_insert;
         original_start = reference_rows(idx)+2;
         full_start = full_start-1+size(chunk_to_insert,1)+insertion_gaps(idx)+1;
+
+        
     end
     cst_full(full_start:end,:) = cst(reference_rows(end)+2:end,:);
     disp(['slotting end, time elapsed: ' num2str(toc)]);
