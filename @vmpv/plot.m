@@ -106,17 +106,8 @@ if(~isempty(Args.NumericArguments))
         plot_num = n;
         
         switch plot_num
+
             case 1
-            % Plot place duration map
-            surf(floor_x, floor_y, floor_z, flipud(reshape(place_dur, 40, 40)'));
-            alpha 1; shading flat;
-            view(-35,20);
-            colormap jet;
-            colorbar;
-
-       
-
-            case 2
             % Plot view duration map
             % Plot floor
             surf(floor_x, floor_y, floor_z, flipud(reshape(view_dur(3:1600+3-1), 40, 40)'));
@@ -143,7 +134,7 @@ if(~isempty(Args.NumericArguments))
             colorbar;
             hold off; 
             
-            case 3
+            case 2
             % Plot view duration map with same style as first plot
             % Update room dimensions to match first plot
             floor_x = repmat(0:40, 41, 1);
@@ -219,7 +210,8 @@ if(~isempty(Args.NumericArguments))
             
             % Set color limits based on behavioral data
             if ~isnan(nanmax(view_dur(3:end))) && nanmax(view_dur(3:end)) ~= 0
-                maxdur = nanmax(view_dur(3:end));
+                %maxdur = nanmax(view_dur(3:end));
+                maxdur = prctile(view_dur(3:end), 75);
             else
                 maxdur = 1;
             end
@@ -227,8 +219,18 @@ if(~isempty(Args.NumericArguments))
             set(ax,'CLim',[0 maxdur],'DataAspectRatioMode','manual','DataAspectRatio',[1 1 1],...
                         'XColor','none','YColor','none','ZColor','none',...
                         'FontSize',14,'GridLineStyle','none','Color','none');
+            % Define the number of colors in the map (e.g., 256)
+            % Create a colormap that goes from blue to white to red
+            % The number 256 indicates the number of color levels, which can be adjusted
+            custom_cmap = [linspace(0, 1, 128)', linspace(0, 1, 128)', ones(128, 1); ...
+                           ones(128, 1), linspace(1, 0, 128)', linspace(1, 0, 128)'];
             
-            colormap jet;
+            % For a simpler version using only white, blue, and red:
+            % custom_cmap = [0 0 1; 1 1 1; 1 0 0];
+            
+            % Apply the custom colormap
+            colormap(custom_cmap);
+            % colormap jet;
             alpha 1; shading flat; 
             view(-35,20);
             
@@ -238,9 +240,17 @@ if(~isempty(Args.NumericArguments))
             y = ax.OuterPosition(2) + ax.OuterPosition(4)/4;
             h = ax.OuterPosition(4)/2;
         
-            c = colorbar(ax,'Position',[x y w h]);
+            colorbar;
             hold off
-            
+
+            case 3
+            % Plot place duration map
+            surf(floor_x, floor_y, floor_z, flipud(reshape(place_dur, 40, 40)'));
+            alpha 1; shading flat;
+            view(-35,20);
+            colormap jet;
+            colorbar;
+           
         end
         
     end
