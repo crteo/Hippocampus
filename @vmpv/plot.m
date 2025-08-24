@@ -114,6 +114,8 @@ if(~isempty(Args.NumericArguments))
             colormap jet;
             colorbar;
 
+       
+
             case 2
             % Plot view duration map
             % Plot floor
@@ -139,7 +141,105 @@ if(~isempty(Args.NumericArguments))
             view(-35,20);
             colormap jet;
             colorbar;
-            hold off;
+            hold off; 
+            
+            case 3
+            % Plot view duration map with same style as first plot
+            % Update room dimensions to match first plot
+            floor_x = repmat(0:40, 41, 1);
+            floor_y = flipud(repmat([0:40]', 1, 41));
+            floor_z = zeros(41,41);
+        
+            ceiling_x = floor_x;
+            ceiling_y = floor_y;
+            ceiling_z = 40.*ones(41,41);  % Match first plot height
+        
+            walls_x = repmat([0.*ones(1,40) 0:39 40.*ones(1,40) 40:-1:0], 9, 1);
+            walls_y = repmat([0:39 40.*ones(1,40) 40:-1:1 0.*ones(1,41)], 9, 1);
+            walls_z = repmat([24:-1:16]', 1, 40*4 + 1);  % Match first plot wall heights
+        
+            P1_x = repmat([24.*ones(1,8) 24:31 32.*ones(1,8) 32:-1:24], 6, 1);
+            P1_y = repmat([8:15 16.*ones(1,8) 16:-1:9 8.*ones(1,9)], 6, 1);
+            PX_z = repmat([21:-1:16]', 1, 8*4 + 1);  % Match first plot pillar heights
+        
+            P2_x = repmat([8.*ones(1,8) 8:15 16.*ones(1,8) 16:-1:8], 6, 1);
+            P2_y = P1_y;
+        
+            P3_x = P1_x;
+            P3_y = repmat([24:31 32.*ones(1,8) 32:-1:25 24.*ones(1,9)], 6, 1);
+        
+            P4_x = P2_x;
+            P4_y = P3_y;
+        
+            % Extract behavioral data for each surface (fix indexing from original)
+            floor_data = flipud(reshape(view_dur(3:3+1600-1), 40, 40)');
+            ceiling_data = flipud(reshape(view_dur(1603:1603+1600-1), 40, 40)');
+            walls_data = flipud(reshape(view_dur(3203:3203+1280-1), 40*4, 8)');
+            P1_data = flipud(reshape(view_dur(4483:4483+160-1), 8*4, 5)');
+            P2_data = flipud(reshape(view_dur(4643:4643+160-1), 8*4, 5)');
+            P3_data = flipud(reshape(view_dur(4803:4803+160-1), 8*4, 5)');
+            P4_data = flipud(reshape(view_dur(4963:4963+160-1), 8*4, 5)');
+        
+            % Pad pillar data with NaNs for surf plots (match first plot)
+            P1_data = [P1_data; nan(1,size(P1_data,2))];
+            P1_data = [P1_data nan(size(P1_data,1),1)];
+        
+            P2_data = [P2_data; nan(1,size(P2_data,2))];
+            P2_data = [P2_data nan(size(P2_data,1),1)];        
+        
+            P3_data = [P3_data; nan(1,size(P3_data,2))];
+            P3_data = [P3_data nan(size(P3_data,1),1)];                
+        
+            P4_data = [P4_data; nan(1,size(P4_data,2))];
+            P4_data = [P4_data nan(size(P4_data,1),1)];
+        
+            % Plot all surfaces with first plot styling
+            surf(floor_x, floor_y, floor_z, floor_data);
+            alpha 1; shading flat;  % Full opacity like first plot
+            hold on;
+        
+            surf(ceiling_x, ceiling_y, ceiling_z, ceiling_data);
+            alpha 1; shading flat;
+            surf(walls_x, walls_y, walls_z, walls_data);      
+            alpha 1; shading flat;
+        
+            surf(P1_x, P1_y, PX_z, P1_data);
+            alpha 1; shading flat;
+            surf(P2_x, P2_y, PX_z, P2_data);
+            alpha 1; shading flat;
+            surf(P3_x, P3_y, PX_z, P3_data);
+            alpha 1; shading flat;
+            surf(P4_x, P4_y, PX_z, P4_data);
+            alpha 1; shading flat;
+        
+            % Apply same axis formatting as first plot
+            ax = gca;
+            axlim = max(abs([get(ax, 'xlim'), get(ax, 'ylim'),get(ax, 'zlim')]));
+            axis(ax,[0 axlim 0 axlim 0 axlim]);  
+            
+            % Set color limits based on behavioral data
+            if ~isnan(nanmax(view_dur(3:end))) && nanmax(view_dur(3:end)) ~= 0
+                maxdur = nanmax(view_dur(3:end));
+            else
+                maxdur = 1;
+            end
+            
+            set(ax,'CLim',[0 maxdur],'DataAspectRatioMode','manual','DataAspectRatio',[1 1 1],...
+                        'XColor','none','YColor','none','ZColor','none',...
+                        'FontSize',14,'GridLineStyle','none','Color','none');
+            
+            colormap jet;
+            alpha 1; shading flat; 
+            view(-35,20);
+            
+            axis(ax,'tight');
+            w = ax.OuterPosition(3)*0.02;
+            x = ax.OuterPosition(1) + ax.OuterPosition(3);
+            y = ax.OuterPosition(2) + ax.OuterPosition(4)/4;
+            h = ax.OuterPosition(4)/2;
+        
+            c = colorbar(ax,'Position',[x y w h]);
+            hold off
             
         end
         
