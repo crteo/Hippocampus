@@ -106,8 +106,18 @@ if(~isempty(Args.NumericArguments))
         plot_num = n;
         
         switch plot_num
-
+            
             case 1
+            
+            % Plot place duration map
+            surf(floor_x, floor_y, floor_z, flipud(reshape(place_dur, 40, 40)'));
+            alpha 1; shading flat;
+           % view(-35,20);
+            view(0, 90);
+            colormap jet;
+            colorbar;
+
+            case 2
             % Plot view duration map
             % Plot floor
             surf(floor_x, floor_y, floor_z, flipud(reshape(view_dur(3:1600+3-1), 40, 40)'));
@@ -134,7 +144,9 @@ if(~isempty(Args.NumericArguments))
             colorbar;
             hold off; 
             
-            case 2
+           
+
+            case 3
             % Plot view duration map with same style as first plot
             % Update room dimensions to match first plot
             floor_x = repmat(0:40, 41, 1);
@@ -147,11 +159,11 @@ if(~isempty(Args.NumericArguments))
         
             walls_x = repmat([0.*ones(1,40) 0:39 40.*ones(1,40) 40:-1:0], 9, 1);
             walls_y = repmat([0:39 40.*ones(1,40) 40:-1:1 0.*ones(1,41)], 9, 1);
-            walls_z = repmat([24:-1:16]', 1, 40*4 + 1);  % Match first plot wall heights
+            walls_z = repmat([24:-1:16]', 1, 40*4 + 1);  
         
             P1_x = repmat([24.*ones(1,8) 24:31 32.*ones(1,8) 32:-1:24], 6, 1);
             P1_y = repmat([8:15 16.*ones(1,8) 16:-1:9 8.*ones(1,9)], 6, 1);
-            PX_z = repmat([21:-1:16]', 1, 8*4 + 1);  % Match first plot pillar heights
+            PX_z = repmat([21:-1:16]', 1, 8*4 + 1); 
         
             P2_x = repmat([8.*ones(1,8) 8:15 16.*ones(1,8) 16:-1:8], 6, 1);
             P2_y = P1_y;
@@ -211,7 +223,7 @@ if(~isempty(Args.NumericArguments))
             % Set color limits based on behavioral data
             if ~isnan(nanmax(view_dur(3:end))) && nanmax(view_dur(3:end)) ~= 0
                 %maxdur = nanmax(view_dur(3:end));
-                maxdur = prctile(view_dur(3:end), 75);
+                maxdur = prctile(view_dur(3:end), 99);
             else
                 maxdur = 1;
             end
@@ -242,14 +254,6 @@ if(~isempty(Args.NumericArguments))
         
             colorbar;
             hold off
-
-            case 3
-            % Plot place duration map
-            surf(floor_x, floor_y, floor_z, flipud(reshape(place_dur, 40, 40)'));
-            alpha 1; shading flat;
-            view(-35,20);
-            colormap jet;
-            colorbar;
            
         end
         

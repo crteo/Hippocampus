@@ -77,10 +77,13 @@ if(~isempty(dir(requiredFile)))
      %5viewdata = h5read(Args.RequiredFile,'/data');
      
     % From   file
-    viewdata = readtable('1binData_new.csv');
+    viewdata = readmatrix('1binData_new.csv');
+    viewdata = viewdata(viewdata(:,2)>0,:);
     
-    viewdata = table2array(viewdata);
-    viewdata = viewdata;
+    %shift = (viewdata(1,1)-rp.data.timeStamps(1,1)*1000);
+    %viewdata(:,1) = viewdata(:,1) - shift;
+    %viewdata = table2array(viewdata);
+    %viewdata = viewdata';
     cd(ori);
 
     % major section 1 - getting combined sessiontime

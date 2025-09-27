@@ -34,7 +34,7 @@ Args.DataCheckArgs = {'GridSteps','NumShuffles','SmoothType','UseMinObs','ThresV
 % variable specific to this class. Store in Args so they can be easily
 % passed to createObject and createEmptyObject
 Args.classname = 'vmsv';
-Args.Prefix = '100'
+Args.Prefix = '1';
 Args.matname = hash_filename(Args);
 % Args.matname = [Args.Prefix Args.classname '.mat'];
 Args.matvarname = 'vms';
@@ -83,7 +83,7 @@ if(~isempty(dir(Args.RequiredFile)))
     pv = load(strcat(Args.Prefix,'vmpv.mat'));
     pv = pv.pv;
     uma = load('umaze.mat');
-    uma = uma.uma;
+    %uma = uma.uma;
     %%%%%%%%%%
     %
     cd(ori);

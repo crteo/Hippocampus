@@ -24,14 +24,14 @@ function aligning_objects(threshold)
     end
     
     rp = rplparallel('auto');
-    el = eyelink('auto');
+    % el = eyelink('auto');
     uf = unityfile('auto');
     
     true_timestamps = rp.data.timeStamps';
     true_timestamps = true_timestamps(:) * 1000; % in ms
 
-    el_trial_timestamps_flat = el.data.trial_timestamps';
-    el_trial_timestamps_flat = el_trial_timestamps_flat(:);
+    %el_trial_timestamps_flat = el.data.trial_timestamps';
+    %el_trial_timestamps_flat = el_trial_timestamps_flat(:);
 
     uf_unityTriggers_flat = uf.data.unityTriggers';
     uf_unityTriggers_flat = uf_unityTriggers_flat(:);
@@ -39,14 +39,15 @@ function aligning_objects(threshold)
     dubious_counter = 0;
     dubious_collector = [];
 
-    saving_closest_fix_times = el.data.fix_times(:,1:2);
-    saving_closest_fix_times = saving_closest_fix_times';
-    saving_closest_fix_times = saving_closest_fix_times(:);
-    ts = el.data.timestamps;
+    %saving_closest_fix_times = el.data.fix_times(:,1:2);
+    %saving_closest_fix_times = saving_closest_fix_times';
+    %saving_closest_fix_times = saving_closest_fix_times(:);
+    %ts = el.data.timestamps;
     
-    tic;
+    %tic;
     difference = NaN;
     index = 1;
+    %{
     for stamps = 1:length(ts)
         if isnan(difference)
             difference = ts(stamps) - saving_closest_fix_times(index);
@@ -67,17 +68,19 @@ function aligning_objects(threshold)
             break;
         end
     end
-    saving_closest_fix_times = saving_closest_fix_times';
-    saving_closest_fix_times = reshape(saving_closest_fix_times,2,[]);
-    saving_closest_fix_times = saving_closest_fix_times';
+    %}
+
+    %saving_closest_fix_times = saving_closest_fix_times';
+    %saving_closest_fix_times = reshape(saving_closest_fix_times,2,[]);
+    %saving_closest_fix_times = saving_closest_fix_times';
     
-    toc
+    %toc
     for i = 1:length(true_timestamps)-1
 
         true_start = true_timestamps(i);
         true_end = true_timestamps(i+1);
         true_diff = true_end - true_start;
-
+%{
         current_start = el_trial_timestamps_flat(i);
         current_end = el_trial_timestamps_flat(i+1);
         current_chunk = double(el.data.timestamps(current_start:current_end));
@@ -98,7 +101,7 @@ function aligning_objects(threshold)
     %     disp(['iteration ' num2str(i)]);
     %     disp('timestamps for eyelink were shifted back by (ms):');
     %     disp(shifting_needed);
-
+%}
         %%%%%%%%%%%%%%%%%%% unity shifting starts here %%%%%%%%%%%%%%%%%%%%%
 
         true_diff = true_diff/1000; % diff from rpl in seconds, for comparison with unityfile timings
@@ -169,32 +172,32 @@ function aligning_objects(threshold)
         session_trial_duration = rp.data.timeStamps(1,1) - true_session_start;
         session_trial_duration = session_trial_duration * 1000; % true delay between unity start and first trial is now in milliseconds
 
-        finding_index = find(el.data.timestamps==el.data.session_start(1));
-        finding_index = finding_index(1);
+        %finding_index = find(el.data.timestamps==el.data.session_start(1));
+        %finding_index = finding_index(1);
 
-        el_session_trial_chunk = double(el.data.timestamps(finding_index:el.data.trial_timestamps(1,1)));
-        last_point = el_session_trial_chunk(end);
-        first_point = el_session_trial_chunk(1);
-        scaled_chunk = ((el_session_trial_chunk-el_session_trial_chunk(1))/double(last_point-first_point))*session_trial_duration;
-        scaled_chunk = scaled_chunk + first_point;
-        shifting_needed = scaled_chunk(end) - last_point;
+        %el_session_trial_chunk = double(el.data.timestamps(finding_index:el.data.trial_timestamps(1,1)));
+        %last_point = el_session_trial_chunk(end);
+        %first_point = el_session_trial_chunk(1);
+        %scaled_chunk = ((el_session_trial_chunk-el_session_trial_chunk(1))/double(last_point-first_point))*session_trial_duration;
+        %scaled_chunk = scaled_chunk + first_point;
+        %shifting_needed = scaled_chunk(end) - last_point;
 
-        el.data.timestamps(el.data.trial_timestamps(1,1)+1:end) = el.data.timestamps(el.data.trial_timestamps(1,1)+1:end) + shifting_needed;
-        el.data.timestamps(finding_index:el.data.trial_timestamps(1,1)) = scaled_chunk;
+        %el.data.timestamps(el.data.trial_timestamps(1,1)+1:end) = el.data.timestamps(el.data.trial_timestamps(1,1)+1:end) + shifting_needed;
+        %el.data.timestamps(finding_index:el.data.trial_timestamps(1,1)) = scaled_chunk;
 
         target = true_session_start * 1000;
-        full_shift = el.data.session_start(1) - target;
-        el.data.timestamps = uint32(el.data.timestamps - full_shift);
-        el.data.session_start_index = finding_index;
+        %full_shift = el.data.session_start(1) - target;
+        %el.data.timestamps = uint32(el.data.timestamps - full_shift);
+        %el.data.session_start_index = finding_index;
         
         toc
-        working_copy = el.data.fix_times(:,1:2);
-        for row = 1:size(working_copy,1)
-            for col = 1:2
-                working_copy(row,col) = el.data.timestamps(saving_closest_fix_times(row,col));
-            end
-        end       
-        el.data.fix_times(:,1:2) = working_copy;
+        %working_copy = el.data.fix_times(:,1:2);
+        % for row = 1:size(working_copy,1)
+         %   for col = 1:2
+          %      working_copy(row,col) = el.data.timestamps(saving_closest_fix_times(row,col));
+          %  end
+        % end       
+        %el.data.fix_times(:,1:2) = working_copy;
         toc
 %         el.data.fix_times(:,1:2) = el.data.fix_times(:,1:2) - double(full_shift);
 
@@ -231,10 +234,10 @@ function aligning_objects(threshold)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     toc
     uf.data.Args.aligned=1;
-    el.data.Args.aligned=1;
+    %el.data.Args.aligned=1;
     rp.data.Args.aligned=1;
        save('unityfile.mat', 'uf', '-v7.3');
-    save('eyelink.mat', 'el', '-v7.3');
+    %save('eyelink.mat', 'el', '-v7.3');
     save('rplparallel.mat', 'rp', '-v7.3');
 
 

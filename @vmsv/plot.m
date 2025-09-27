@@ -17,7 +17,7 @@ function [obj, varargout] = plot(obj,varargin)
 
 Args = struct('LabelsOff',0,'GroupPlots',1,'GroupPlotIndex',1,'Color','b', ...
 		  'ReturnVars',{''}, 'ArgsOnly',0, 'Cmds','', 'Map',0,'Smooth',1,'SameScale',0, ...
-          'SIC',0,'Radii',0,'Details',0,'MinDur',0,'Filtered',0,'SortByRatio',0,'plotmap',1);
+          'SIC',0,'Radii',0,'Details',0,'MinDur',0,'Filtered',0,'SortByRatio',0,'plotmap',1, 'occupancy', 0);
 Args.flags = {'LabelsOff','ArgsOnly','Errorbar','SIC','Shuffle','plotmap'};
 [Args,varargin2] = getOptArgs(varargin,Args);
 
@@ -51,6 +51,7 @@ if Args.plotmap
 
     P4_x = P2_x;
     P4_y = P3_y;
+    
 
     floor = flipud(reshape(mapL(3:3+1600-1), 40, 40)');
     floordum = flipud(reshape(mapLdummy(3:3+1600-1), 40, 40)');
@@ -91,6 +92,15 @@ if Args.plotmap
     P4_TL = [P4_TL; nan(1,size(P4_TL,2))];
     P4_TL = [P4_TL nan(size(P4_TL,1),1)];
 
+    % Replace NaN values with a value that will map to black
+    black_value = min(0, nanmin(mapL(3:end))) - 1;
+    floor(isnan(floor)) = black_value;  % or value below  minimum data
+    ceiling(isnan(ceiling)) = black_value;
+    walls(isnan(walls)) = black_value;
+    P1_BR(isnan(P1_BR)) = black_value;
+    P2_BL(isnan(P2_BL)) = black_value;
+    P3_TR(isnan(P3_TR)) = black_value;
+    P4_TL(isnan(P4_TL)) = black_value;
     % Plot floor
     surf(floor_x, floor_y, floor_z, floor);
     alpha 1; shading flat;
@@ -123,10 +133,13 @@ if Args.plotmap
     end
     
     set(ax,'CLim',[0 maxrate],'DataAspectRatioMode','manual','DataAspectRatio',[1 1 1],...
-                'XColor','none','YColor','none','ZColor','none',...
-                'FontSize',14,'GridLineStyle','none','Color','none');
+            'XColor','none','YColor','none','ZColor','none',...
+            'FontSize',14,'GridLineStyle','none','Color','none');
     
-    colormap jet;
+    colormap(jet);
+
+    ax.Colormap = [0 0 0; ax.Colormap];  % Add black as first color
+    set(ax, 'CLim', [0-eps maxrate]);    % Shift slightly to use black for values just below 0
     
     alpha 1; shading flat; 
     view(-35,20);
@@ -394,4 +407,4 @@ function detailed_plot(details1,Args)
                 xlabel({['zeros: ' num2str(binned_data(1,column))],['ratio: ' num2str(sum(binned_data(2:end,column))/binned_data(1,column))]});
             end
             counter = counter + 1;
-        end        
+        end    

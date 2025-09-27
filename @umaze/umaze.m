@@ -582,13 +582,14 @@ if(dnum>0)
 	d.data = data;
 	obj = class(d,Args.classname,n);
 	saveObject(obj,'ArgsC',Args);
+    disp('saving uma...');
 else
 	% create empty object
 	obj = createEmptyObject(Args);
 end
 
 % move back to previous directory
-cd(cwd)
+%cd(cwd)
 
 function obj = createEmptyObject(Args)
 
