@@ -24,7 +24,7 @@ elseif(Args.AnalysisLevel)
 	r = 'Single';
 elseif(Args.Duration)
     % specifies 2 plots to be generated - place and view duration maps
-    r = 2;
+    r = 3;
     
 elseif(Args.SpeedLimit)
     
